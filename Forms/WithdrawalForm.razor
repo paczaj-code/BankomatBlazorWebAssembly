@@ -1,0 +1,183 @@
+﻿@inject BankomatService BankomatService
+
+<div class="row">
+    <div class="col-12">
+        <h3>Wypłata</h3>
+
+        <div class="form-group">
+            <label for="name">Podaj kwotę</label>
+            <input type="number" min="0" @bind-value="amount" @bind-value:event="oninput"
+                   class="form-control mb-3" id="amount" />
+        </div>
+    </div>
+    <div class="form-group mt-3">
+        <button class="btn btn-primary" @onclick="MakeWithdrawal">Wypłać</button>
+        <button class="btn btn-dark" @onclick="Reset">Anuluj</button>
+
+
+    </div>
+</div>
+
+
+@{
+    if (isAmountCorrect == false)
+    {
+        <div class="alert alert-@errorClass mt-3" role="alert">
+            @((MarkupString)errorMessasage)
+        </div>
+    }
+}
+
+@{
+    if (isShowTable)
+    {
+        <hr />
+        <OperationTable operation="Cal()" title="Proponowana wypłta" tableHeaderClass="info" />
+    }
+}
+
+@code {
+    private bool isAmountCorrect = true;
+    private bool isShowTable = false;
+    private string errorMessasage = "";
+    private string errorClass = "danger";
+
+    private int amount = 0;
+
+    [Parameter]
+    public List<Nominal>? currentNominals { get; set; }
+
+    [Parameter]
+    public EventCallback<List<Nominal>> SetWithdrawal { get; set; }
+
+    List<Nominal> currentWithdrawal = new();
+
+
+
+    private void Reset()
+    {
+        isAmountCorrect = true;
+        isShowTable = false;
+        amount = 0;
+        currentWithdrawal = new();
+    }
+
+
+    private void MakeWithdrawal()
+
+    {
+        var sum = BankomatService.CalculateSum(Cal());
+
+
+        if (amount == 0)
+        {
+            isAmountCorrect = false;
+            isShowTable = false;
+            errorMessasage = "Kwota nie może wynosić 0!!!!";
+        }
+
+        else if (amount < 20)
+        {
+            isAmountCorrect = false;
+            isShowTable = false;
+            errorMessasage = "Minimalna kwota wypłaty wynosi 20 zł";
+        }
+
+        else if (amount > 20 && amount % 10 != 0)
+        {
+            isAmountCorrect = false;
+            isShowTable = true;
+            errorMessasage = $"<i>Nie możemy wypłaćić podanej kwoty</i>";
+        }
+
+
+        else if ((amount < 50 && amount % 20 != 0))
+        {
+            isAmountCorrect = false;
+            isShowTable = true;
+            errorMessasage = $"<i>Nie możemy wypłaćić podanej kwoty</i>";
+        }
+
+
+        else if (amount > BankomatService.CalculateSum(currentNominals))
+        {
+            isAmountCorrect = false;
+            errorMessasage = $"Przykro - bankomat jest zbyt biedny.<br/> Maksymalna kwota <strong>{BankomatService.CalculateSum(currentNominals)} zł</strong>";
+        }
+
+        else if (amount != sum)
+        {
+            isAmountCorrect = false;
+            isShowTable = true;
+            errorMessasage = $"<i>Nie22 możemy wypłaćić podanej kwoty</i> <p> Propunujemy kwotę <strong>{sum} zł</strong<p>";
+
+        }
+        else
+        {
+            isAmountCorrect = true;
+            isShowTable = true;
+
+
+            SetWithdrawal.InvokeAsync(Cal());
+            Reset();
+        }
+
+
+    }
+
+
+    private List<Nominal> Cal()
+    {
+        currentWithdrawal = new();
+        var amountToCalc = amount - FindInit20Nominals(amount) * 20;
+        foreach (int nominal in BankomatService.Nominals)
+        {
+
+            var nominalsAmount = 0;
+            var requiredAmountofNominals = amountToCalc / nominal;
+            var availableAmountofNominals = currentNominals.FirstOrDefault(currentNominals => currentNominals.NominalValue == nominal).NominalAmount;
+
+            if (requiredAmountofNominals <= availableAmountofNominals)
+            {
+                nominalsAmount = nominal == 20 ? requiredAmountofNominals + FindInit20Nominals(amount) : requiredAmountofNominals;
+            }
+
+            else
+            {
+                nominalsAmount = availableAmountofNominals;
+            }
+
+            currentWithdrawal.Add(new Nominal { NominalAmount = nominalsAmount, NominalValue = nominal });
+            amountToCalc = amountToCalc - nominalsAmount * nominal;
+        }
+        return currentWithdrawal;
+    }
+
+
+
+    private int FindInit20Nominals(int amount)
+    {
+
+        int initNominal20 = 0;
+        int amountToCalc = 0;
+        if (amount > 50)
+        {
+            for (int j = 0; j < 5; j++)
+            {
+                amountToCalc = amount - j * 20;
+
+                if (amountToCalc % 50 == 0)
+                {
+                    initNominal20 = j;
+                    break;
+                }
+            }
+
+            return initNominal20;
+        }
+
+        return 0;
+    }
+}
+
+

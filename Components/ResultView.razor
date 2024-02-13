@@ -1,0 +1,52 @@
+﻿@inject BankomatService BankomatService
+
+
+<h3 class="text-center">Stan bankomatu</h3>
+
+
+<OperationTable operation="initNominals" tableHeaderClass="warning" title="Stan początkowy" />
+@{
+    if (allDeposits.Count > 0)
+    {
+        <OperationsTable operations="allDeposits" tableHeaderClass="success" title="Wpłaty" />
+
+    }
+
+  
+}
+
+ @{
+    if (allWithdrawals.Count > 0)
+    {
+        <OperationsTable operations="allWithdrawals" title="Wypłaty" tableHeaderClass="danger" />
+    }
+
+} 
+
+
+
+
+
+@{
+
+    if (allDeposits.Count > 0 || allWithdrawals.Count>0)
+    {
+        <OperationTable operation="currentNominals" title="Stan po operacjach" tableHeaderClass="primary" />
+    }
+}
+
+
+
+@code {
+    [Parameter]
+    public List<Nominal>? initNominals { get; set; }
+
+    [Parameter]
+    public List<Nominal>? currentNominals { get; set; }
+
+    [Parameter]
+    public List<List<Nominal>> allDeposits { get; set; } 
+    
+    [Parameter]
+    public List<List<Nominal>> allWithdrawals { get; set; }
+}

@@ -1,0 +1,115 @@
+﻿@page "/"
+@inject BankomatService BankomatService
+
+<PageTitle>Bankomat</PageTitle>
+
+<h1>Witaj w bankomacie</h1>
+<hr />
+<div class="row gx-5">
+    <div class="col-5">
+        <button class="btn btn-primary" @onclick="showDeposit">Wpłata</button>
+        <button class="btn btn-success" @onclick="showDWithdrawal">Wypłata</button>
+        <hr />
+        @{
+            if (operationType == 1)
+            {
+                <DepositForm SetDeposit="SetDeposit"></DepositForm>
+            }
+
+            else if (operationType == 2)
+            {
+                <WithdrawalForm currentNominals="currentNominals" SetWithdrawal="SetWithdrawal"></WithdrawalForm>
+            }
+
+            else
+            {
+                <h3>Wybierz operację</h3>
+            }
+        }
+    </div>
+    <div class="col-7">
+        <ResultView initNominals="initialNominals" allDeposits="allDeposits" currentNominals="currentNominals" allWithdrawals="allWithdrawals"></ResultView>
+    </div>
+</div>
+
+
+
+
+
+
+@code {
+    private static Random r = new Random();
+    private int operationType;
+
+
+
+
+    public List<Nominal> initialNominals = new()
+      {
+        new Nominal {NominalValue=200, NominalAmount=r.Next(1,100)},
+        new Nominal {NominalValue=100, NominalAmount=r.Next(1,100)},
+        new Nominal {NominalValue=50, NominalAmount=r.Next(1,100)},
+        new Nominal {NominalValue=20, NominalAmount=r.Next(1,100)},
+
+    };
+
+    private List<List<Nominal>> allDeposits = new();
+    private List<List<Nominal>> allWithdrawals = new();
+
+    private List<Nominal>? currentNominals = new();
+
+
+    private void showDeposit() => operationType = 1;
+
+    private void showDWithdrawal()
+    {
+        operationType = 2;
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        SetStateOfNominalsAfterOperations();
+    }
+
+
+    private void SetDeposit(List<Nominal> deposit)
+    {
+        allDeposits.Add(deposit);
+        SetStateOfNominalsAfterOperations();
+
+    }
+
+    private void SetWithdrawal(List<Nominal> withdrawal)
+    {
+        allWithdrawals.Add(withdrawal);
+        SetStateOfNominalsAfterOperations();
+
+    }
+
+    private List<Nominal> SetStateOfNominalsAfterOperations()
+    {
+        if (allDeposits.Count == 0 && allWithdrawals.Count == 0)
+        {
+            currentNominals = initialNominals;
+        }
+        else
+        {
+
+
+            currentNominals = new List<Nominal>
+        {
+            new Nominal {NominalValue=200, NominalAmount = initialNominals.FirstOrDefault(initNominals=>initNominals.NominalValue == 200).NominalAmount + BankomatService.CalculateAmountOfNominals(allDeposits,200) - BankomatService.CalculateAmountOfNominals(allWithdrawals,200)},
+            new Nominal {NominalValue=100, NominalAmount = initialNominals.FirstOrDefault(initNominals=>initNominals.NominalValue == 100).NominalAmount + BankomatService.CalculateAmountOfNominals(allDeposits,100) - BankomatService.CalculateAmountOfNominals(allWithdrawals,100)},
+            new Nominal {NominalValue=50, NominalAmount = initialNominals.FirstOrDefault(initNominals=>initNominals.NominalValue == 50).NominalAmount + BankomatService.CalculateAmountOfNominals(allDeposits,50) - BankomatService.CalculateAmountOfNominals(allWithdrawals,50)},
+            new Nominal {NominalValue=20, NominalAmount = initialNominals.FirstOrDefault(initNominals=>initNominals.NominalValue == 20).NominalAmount + BankomatService.CalculateAmountOfNominals(allDeposits,20) - BankomatService.CalculateAmountOfNominals(allWithdrawals,20)},
+        };
+        }
+        return currentNominals;
+
+    }
+
+
+
+
+}

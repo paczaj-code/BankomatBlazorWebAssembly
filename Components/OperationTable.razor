@@ -1,0 +1,47 @@
+﻿@inject BankomatService BankomatService
+
+<h5>@title</h5>
+
+<div class="overflow-hidden border-info border" style="box-shadow:0 0  7px  rgba(0,0,0,0.4) ; border-radius:8px">
+    <table class="table table-striped " style="margin:0">
+        <thead>
+            <tr class="bg-@tableHeaderClass text-white">
+                <th>nominał 200#</th>
+                <th>nominał 100#</th>
+                <th>nominał 50#</th>
+                <th>nominał 20#</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+   
+            <tr>
+            @{
+                foreach(int nominal in BankomatService.Nominals)
+                {
+                <td>@operation.FirstOrDefault(initNominals => initNominals.NominalValue == nominal).NominalAmount</td>
+                }
+            }
+                <td class="fw-bold">@BankomatService.CalculateSum(operation).ToString("C0", CultureInfo.CreateSpecificCulture("pl-PL"))</td>
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+<hr/>
+
+
+@code {
+
+
+    [Parameter]
+    public string title { get; set; }
+
+    [Parameter]
+    public string tableHeaderClass { get; set; }
+
+
+
+    [Parameter]
+    public List<Nominal> operation { get; set; }
+}
